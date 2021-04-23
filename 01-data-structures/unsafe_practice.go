@@ -30,6 +30,29 @@ func sameLocationStrings(s1 string, s2 string) bool {
 	return p1 == p2
 }
 
+func sumIntSliceValues(slice []int) int {
+	// determine int size, it's machine-dependent
+	intSize := unsafe.Sizeof(int(1))
+	fmt.Printf("Int size: %d\n", intSize)
+
+	// determine pointer size, it's machine-dependent
+	pointerSize := unsafe.Sizeof(&slice)
+	fmt.Printf("Pointer size: %d\n", pointerSize)
+
+	// determine slice size
+	sliceSize := *(*int)(unsafe.Pointer(uintptr(unsafe.Pointer(&slice)) + pointerSize))
+	fmt.Printf("Slice size: %d\n", sliceSize)
+
+	sum := 0
+	for i := 0; i < sliceSize; i++ {
+		// determine uintptr address of struct start to perform integer arithmetic,
+		// then dereference to get the [i]th element of the underlying array
+		sum += *(*int)(unsafe.Pointer(*(*uintptr)(unsafe.Pointer(&slice)) + intSize*uintptr(i)))
+	}
+
+	return sum
+}
+
 func main() {
 
 	// 1. Given a float64, return a uint64 with the same binary representation
@@ -48,4 +71,8 @@ func main() {
 	s4 := s3[:]
 
 	fmt.Printf("Same location? - %v\n", sameLocationStrings(s3, s4))
+
+	// 3. Given an []int slice, return the sum of values in the slice without using range or the [] operator.
+	sl := []int{12, 3, 11, 3, 10}
+	fmt.Printf("Sum of elements: %d", sumIntSliceValues(sl))
 }
