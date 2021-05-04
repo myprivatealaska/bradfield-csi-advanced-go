@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"sync"
+	"sync/atomic"
 )
 
 type counterService interface {
@@ -15,9 +17,32 @@ type CounterWrong struct {
 	counter uint64
 }
 
-func (e *CounterWrong) getNext() uint64 {
-	e.counter += 1
-	return e.counter
+func (c *CounterWrong) getNext() uint64 {
+	c.counter += 1
+	return c.counter
+}
+
+// 2. Atomically increment a counter value using sync/atomic
+type CounterAtomic struct {
+	counter uint64
+}
+
+func (c *CounterAtomic) getNext() uint64 {
+	return atomic.AddUint64(&c.counter, 1)
+}
+
+// 3. Use a sync.Mutex to guard access to a shared counter value
+type CounterMu struct {
+	counter uint64
+	mu      sync.Mutex
+}
+
+func (c *CounterMu) getNext() uint64 {
+	c.mu.Lock()
+	c.counter += 1
+	newC := c.counter
+	c.mu.Unlock()
+	return newC
 }
 
 // 4. Launch a separate goroutine with exclusive access to a private counter value;
@@ -51,16 +76,31 @@ func (e *CounterMonitor) getNext() uint64 {
 }
 
 func main() {
+	// 1 - Data race detected
 	//e := CounterWrong{counter: 0}
-	////go e.getNext()
-	//e.getNext()
-	//e.getNext()
-	//e.getNext()
+	//for i := 0; i < 10; i++ {
+	//	go e.getNext()
+	//}
 	//fmt.Println(e.counter)
 
+	// 2 - use sync.Atomic
+	//counterA := CounterAtomic{}
+	//for i := 0; i < 10; i++ {
+	//	go counterA.getNext()
+	//}
+	//fmt.Println(counterA.getNext())
+
+	// 3 - use sync.Mutex
+	//counterMu := CounterMu{}
+	//for i := 0; i < 10; i++ {
+	//	go counterMu.getNext()
+	//}
+	//fmt.Println(counterMu.getNext())
+
+	// 4 - use a separate goroutine with exclusive access to a private counter value
 	counterM := NewCounterMonitor()
-	go counterM.getNext()
-	counterM.getNext()
-	counterM.getNext()
+	for i := 0; i < 10; i++ {
+		go counterM.getNext()
+	}
 	fmt.Println(counterM.getNext())
 }
