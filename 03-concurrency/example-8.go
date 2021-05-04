@@ -6,6 +6,8 @@ import (
 	"time"
 )
 
+// Problem: using a lock inside of another lock
+// Solution: remove locks from logState
 type dbService struct {
 	lock       *sync.RWMutex
 	connection string
@@ -19,9 +21,6 @@ func newDbService(connection string) *dbService {
 }
 
 func (d *dbService) logState() {
-	d.lock.RLock()
-	defer d.lock.RUnlock()
-
 	fmt.Printf("connection %q is healthy\n", d.connection)
 }
 

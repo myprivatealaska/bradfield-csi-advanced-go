@@ -5,6 +5,9 @@ import (
 	"sync"
 )
 
+// Problem: lock was passed by value which wasn't actually locking anything
+// Solution: pass the pointer to the lock around instead
+
 const (
 	numGoroutines = 100
 	numIncrements = 100
@@ -14,7 +17,7 @@ type counter struct {
 	count int
 }
 
-func safeIncrement(lock sync.Mutex, c *counter) {
+func safeIncrement(lock *sync.Mutex, c *counter) {
 	lock.Lock()
 	defer lock.Unlock()
 
@@ -34,7 +37,7 @@ func main() {
 			defer wg.Done()
 
 			for j := 0; j < numIncrements; j++ {
-				safeIncrement(globalLock, c)
+				safeIncrement(&globalLock, c)
 			}
 		}()
 	}
