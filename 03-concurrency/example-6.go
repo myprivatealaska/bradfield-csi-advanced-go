@@ -5,6 +5,8 @@ import (
 	"sync"
 )
 
+// Problem: deadlock because we're trying to acquire a RLock while still having a Lock in place
+// Solution: Remove `defer`, Unlock before calling c.logState()
 type coordinator struct {
 	lock   sync.RWMutex
 	leader string
@@ -26,9 +28,9 @@ func (c *coordinator) logState() {
 
 func (c *coordinator) setLeader(leader string, shouldLog bool) {
 	c.lock.Lock()
-	defer c.lock.Unlock()
-
 	c.leader = leader
+
+	c.lock.Unlock()
 
 	if shouldLog {
 		c.logState()

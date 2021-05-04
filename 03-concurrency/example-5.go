@@ -6,6 +6,9 @@ import (
 	"time"
 )
 
+// Problem: We can't use an unbuffered channel because we'll eventually hit a deadlock - the two slower goroutines would've
+// 			gotten stuck trying to send their responses on a channel from which no goroutine will ever receive - a goroutine leak
+// Solution: Replace the unbuffered channel with a buffered one
 var responses = []string{
 	"200 OK",
 	"402 Payment Required",
@@ -29,7 +32,7 @@ func query(endpoint string) string {
 // response (this approach increases the amount of traffic but
 // significantly improves "tail latency")
 func parallelQuery(endpoints []string) string {
-	results := make(chan string)
+	results := make(chan string, 3)
 	for i := range endpoints {
 		go func(i int) {
 			results <- query(endpoints[i])
